@@ -1,10 +1,7 @@
 """
 UtopIA — Ingestion RAG
-Construit le vectorstore au démarrage de l'app (via @st.cache_resource).
-Compatible Streamlit Cloud : pas de persistance disque requise.
 """
 
-import os
 from pathlib import Path
 from typing import List
 
@@ -50,15 +47,10 @@ def extract_pdf(path: Path) -> List[Document]:
 
 
 def build_vectorstore(api_key: str) -> Chroma:
-    """
-    Construit le vectorstore en mémoire depuis les PDFs de docs/.
-    Appelé une seule fois via @st.cache_resource.
-    """
     pdf_files = sorted(DOCS_DIR.rglob("*.pdf"))
     if not pdf_files:
         raise FileNotFoundError(f"Aucun PDF trouvé dans {DOCS_DIR}")
 
-    # Extraction
     all_raw = []
     for pdf_path in pdf_files:
         all_raw.extend(extract_pdf(pdf_path))
@@ -66,7 +58,6 @@ def build_vectorstore(api_key: str) -> Chroma:
     if not all_raw:
         raise ValueError("Aucun texte extrait des PDFs.")
 
-    # Chunking
     all_chunks = []
     for doc in all_raw:
         category = doc.metadata.get("category", "default")
@@ -81,10 +72,9 @@ def build_vectorstore(api_key: str) -> Chroma:
             c.metadata.update(doc.metadata)
         all_chunks.extend(chunks)
 
-    # Vectorisation
-    embeddings = AnthropicEmbeddings(
+    embeddings = VoyageAIEmbeddings(
+        voyage_api_key=api_key,
         model="voyage-3",
-        anthropic_api_key=api_key,
     )
     vectorstore = Chroma.from_documents(
         documents=all_chunks,
@@ -92,3 +82,5 @@ def build_vectorstore(api_key: str) -> Chroma:
         collection_name="utopia",
     )
     return vectorstore
+
+
