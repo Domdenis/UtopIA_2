@@ -57,7 +57,7 @@ def select_model_conceptuel(patient: PatientState, api_key: str, vectorstore=Non
     user_prompt = "\n".join(lines)
 
     response = client.messages.create(
-        model="claude-3-5-sonnet-20241022",
+        model="claude-3-haiku-20240307",
         max_tokens=800,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": user_prompt}]
