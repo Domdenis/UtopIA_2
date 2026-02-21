@@ -89,7 +89,7 @@ Rédige l'argumentaire en respectant cette structure :
 Rédige de façon professionnelle, en 400-600 mots. Utilise des phrases complètes, pas de tirets."""
 
     response = client.messages.create(
-        model="claude-sonnet-4-6",
+        model="claude-3-5-sonnet-20241022",
         max_tokens=1500,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": user_prompt}]
@@ -105,7 +105,7 @@ def generate_cpam_summary(patient: PatientState, api_key: str) -> dict:
     client = Anthropic(api_key=api_key)
 
     response = client.messages.create(
-        model="claude-sonnet-4-6",
+        model="claude-3-5-sonnet-20241022",
         max_tokens=600,
         messages=[{
             "role": "user",
