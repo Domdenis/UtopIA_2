@@ -1,6 +1,5 @@
 """
 UtopIA — Node 2 : Rédaction du diagnostic ergothérapique
-Produit un diagnostic structuré selon le modèle conceptuel choisi.
 """
 
 from anthropic import Anthropic
@@ -9,67 +8,71 @@ from graph.state import PatientState
 SYSTEM_PROMPT = """Tu es UtopIA, ergothérapeute expert spécialisé en préconisation VPH.
 Tu rédiges des diagnostics ergothérapiques professionnels, structurés et argumentés.
 Ton style est clinique, précis, orienté sur les besoins fonctionnels et occupationnels.
-Tu utilises le vocabulaire professionnel de l'ergothérapie française.
-Tu t'appuies sur les données recueillies pour formuler un diagnostic qui servira de base aux préconisations."""
+Tu utilises le vocabulaire professionnel de l'ergothérapie française."""
 
 
 def write_diagnostic(patient: PatientState, api_key: str, vectorstore=None) -> str:
-    """
-    Rédige le diagnostic ergothérapique basé sur le profil patient
-    et le modèle conceptuel sélectionné.
-    """
     client = Anthropic(api_key=api_key)
 
-    # Contexte RAG - positionnement et évaluation
-    rag_context = ""
+    rag_section = ""
     if vectorstore:
-        from rag.retriever import search, format_context
-        query = f"diagnostic évaluation {patient.diagnostic} {patient.modele_conceptuel_choisi} besoins occupationnels"
-        docs = search(query, k=5, vectorstore=vectorstore)
-        rag_context = format_context(docs)
+        try:
+            from rag.retriever import search, format_context
+            docs = search(
+                "diagnostic evaluation besoins positionnement fauteuil roulant",
+                k=4,
+                vectorstore=vectorstore
+            )
+            if docs:
+                rag_section = "Références cliniques :\n" + format_context(docs)
+        except Exception:
+            pass
 
-    profil = patient.to_context_summary()
-    modele = patient.modele_conceptuel_choisi or "MCREO"
-    justification_modele = patient.justification_modele or ""
-
-    # Construire les données anthropométriques si disponibles
-    mesures_str = ""
     mesures = []
-    if patient.largeur_bassin: mesures.append(f"Largeur bassin : {patient.largeur_bassin} cm")
-    if patient.longueur_cuisses: mesures.append(f"Longueur cuisses : {patient.longueur_cuisses} cm")
-    if patient.longueur_creux_poplite_pied: mesures.append(f"Creux poplité-pied : {patient.longueur_creux_poplite_pied} cm")
-    if patient.hauteur_omoplate: mesures.append(f"Hauteur omoplate : {patient.hauteur_omoplate} cm")
-    if patient.largeur_tronc: mesures.append(f"Largeur tronc : {patient.largeur_tronc} cm")
-    if patient.poids: mesures.append(f"Poids : {patient.poids} kg")
+    if patient.largeur_bassin:
+        mesures.append("Largeur bassin : " + str(patient.largeur_bassin) + " cm")
+    if patient.longueur_cuisses:
+        mesures.append("Longueur cuisses : " + str(patient.longueur_cuisses) + " cm")
+    if patient.longueur_creux_poplite_pied:
+        mesures.append("Creux poplité-pied : " + str(patient.longueur_creux_poplite_pied) + " cm")
+    if patient.hauteur_omoplate:
+        mesures.append("Hauteur omoplate : " + str(patient.hauteur_omoplate) + " cm")
+    if patient.largeur_tronc:
+        mesures.append("Largeur tronc : " + str(patient.largeur_tronc) + " cm")
+    if patient.poids:
+        mesures.append("Poids : " + str(patient.poids) + " kg")
+
+    modele = patient.modele_conceptuel_choisi or "MCREO"
+
+    lines = [
+        "Rédige un diagnostic ergothérapique complet pour ce patient, en utilisant le modèle " + modele + ".",
+        "",
+        "PROFIL PATIENT :",
+        patient.to_context_summary(),
+    ]
     if mesures:
-        mesures_str = "\nMesures anthropométriques :\n" + "\n".join(mesures)
+        lines.append("")
+        lines.append("Mesures anthropométriques :")
+        lines.extend(mesures)
+    if patient.justification_modele:
+        lines.append("")
+        lines.append("Justification du modèle : " + patient.justification_modele)
+    if rag_section:
+        lines.append("")
+        lines.append(rag_section)
 
-    user_prompt = f"""Rédige un diagnostic ergothérapique complet pour ce patient, en utilisant le modèle {modele}.
+    lines += [
+        "",
+        "Structure le diagnostic en 4 parties :",
+        "## 1. Présentation de la situation",
+        "## 2. Analyse des besoins selon le modèle " + modele,
+        "## 3. Déficits et ressources",
+        "## 4. Objectifs de la préconisation",
+        "",
+        "Sois précis, clinique. Maximum 500 mots.",
+    ]
 
-PROFIL PATIENT :
-{profil}
-{mesures_str}
-
-MODÈLE CONCEPTUEL : {modele}
-{f"Justification du choix : {justification_modele}" if justification_modele else ""}
-
-{f"RÉFÉRENCES CLINIQUES :{chr(10)}{rag_context}" if rag_context else ""}
-
-Structure ton diagnostic en 4 parties :
-
-## 1. Présentation de la situation
-(Synthèse clinique du patient, contexte de la demande)
-
-## 2. Analyse des besoins selon le modèle {modele}
-(Besoins fonctionnels, occupationnels, environnementaux identifiés)
-
-## 3. Déficits et ressources
-(Points de vigilance cliniques, capacités existantes, facteurs facilitants/limitants)
-
-## 4. Objectifs de la préconisation
-(Ce que le VPH doit permettre en termes de participation et d'autonomie)
-
-Sois précis, clinique, et base-toi strictement sur les données fournies. Maximum 500 mots."""
+    user_prompt = "\n".join(lines)
 
     response = client.messages.create(
         model="claude-3-5-sonnet-20241022",
