@@ -1,5 +1,5 @@
 """
-UtopIA — Ingestion RAG
+UtopIA — Ingestion RAGG
 Embeddings locaux via sentence-transformers (pas de clé API supplémentaire).
 """
 
