@@ -72,7 +72,7 @@ Structure ton diagnostic en 4 parties :
 Sois précis, clinique, et base-toi strictement sur les données fournies. Maximum 500 mots."""
 
     response = client.messages.create(
-        model="claude-opus-4-5",
+        model="claude-sonnet-4-6",
         max_tokens=1200,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": user_prompt}]
