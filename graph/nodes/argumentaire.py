@@ -83,7 +83,7 @@ def write_argumentaire(patient: PatientState, api_key: str, vectorstore=None) ->
     ]
 
     response = client.messages.create(
-        model="claude-3-5-sonnet-20241022",
+        model="claude-3-haiku-20240307",
         max_tokens=1500,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": "\n".join(lines)}]
@@ -107,7 +107,7 @@ def generate_cpam_summary(patient: PatientState, api_key: str) -> dict:
     ]
 
     response = client.messages.create(
-        model="claude-3-5-sonnet-20241022",
+        model="claude-3-haiku-20240307",
         max_tokens=400,
         messages=[{"role": "user", "content": "\n".join(lines)}]
     )
