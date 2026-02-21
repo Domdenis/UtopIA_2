@@ -52,7 +52,7 @@ def determine_vph_category(patient: PatientState, api_key: str, vectorstore=None
     ]
 
     response = client.messages.create(
-        model="claude-3-5-sonnet-20241022",
+        model="claude-3-haiku-20240307",
         max_tokens=200,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": "\n".join(lines)}]
@@ -112,7 +112,7 @@ def search_at(patient: PatientState, api_key: str, vectorstore=None, tavily_api_
     ]
 
     response = client.messages.create(
-        model="claude-3-5-sonnet-20241022",
+        model="claude-3-haiku-20240307",
         max_tokens=2000,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": "\n".join(lines)}]
