@@ -5,7 +5,7 @@ Analyse le profil patient et choisit le modèle conceptuel ergothérapique adapt
 
 from anthropic import Anthropic
 from graph.state import PatientState
-from rag.retriever import get_modele_conceptuel_context, get_vph_indications
+from rag.retriever import search, format_context
 
 SYSTEM_PROMPT = """Tu es UtopIA, un assistant expert en ergothérapie clinique, spécialisé dans
 la préconisation de véhicules pour personnes handicapées (VPH) selon la réglementation française.
