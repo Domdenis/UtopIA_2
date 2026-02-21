@@ -75,7 +75,7 @@ def write_diagnostic(patient: PatientState, api_key: str, vectorstore=None) -> s
     user_prompt = "\n".join(lines)
 
     response = client.messages.create(
-        model="claude-3-5-sonnet-20241022",
+        model="claude-3-haiku-20240307",
         max_tokens=1200,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": user_prompt}]
