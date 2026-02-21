@@ -58,7 +58,7 @@ Réponds en JSON strict avec ce format :
 }}"""
 
     response = client.messages.create(
-        model="claude-opus-4-5",
+        model="claude-sonnet-4-6",
         max_tokens=800,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": user_prompt}]
