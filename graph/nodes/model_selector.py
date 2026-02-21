@@ -1,61 +1,60 @@
 """
 UtopIA — Node 1 : Sélection du modèle conceptuel
-Analyse le profil patient et choisit le modèle conceptuel ergothérapique adapté.
 """
 
+import json
+import re
 from anthropic import Anthropic
 from graph.state import PatientState
-from rag.retriever import search, format_context
 
 SYSTEM_PROMPT = """Tu es UtopIA, un assistant expert en ergothérapie clinique, spécialisé dans
 la préconisation de véhicules pour personnes handicapées (VPH) selon la réglementation française.
 
 Tu maîtrises parfaitement les modèles conceptuels en ergothérapie :
-- MCREO (Modèle Canadien du Rendement et de l'Engagement Occupationnel) : centré sur l'occupation,
-  la relation Personne-Environnement-Occupation, idéal pour explorer le sens des activités
-- PEO (Person-Environment-Occupation) : analyse l'adéquation entre capacités, environnement et tâches
-- MOHO (Model of Human Occupation) : volition, habituation, capacités de performance
-- OTIPM comme cadre global structurant le processus
+- MCREO : centré sur l'occupation, relation Personne-Environnement-Occupation
+- PEO : adéquation entre capacités, environnement et tâches
+- MOHO : volition, habituation, capacités de performance
+- OTIPM : cadre global structurant le processus
 
-Tu réponds en français, de façon structurée et professionnelle, en ergothérapeute praticien."""
+Tu réponds en français, de façon structurée et professionnelle."""
 
 
 def select_model_conceptuel(patient: PatientState, api_key: str, vectorstore=None) -> dict:
-    """
-    Analyse le profil patient et sélectionne le modèle conceptuel le plus adapté.
-    Retourne : { modele, justification, axes_evaluation }
-    """
     client = Anthropic(api_key=api_key)
-
-    # Contexte RAG
-    rag_context = ""
-    if vectorstore:
-        from rag.retriever import search, format_context
-        docs = search(
-            f"modèle conceptuel ergothérapie {patient.diagnostic} {patient.situation_sante}",
-            k=4, vectorstore=vectorstore
-        )
-        rag_context = format_context(docs)
 
     profil = patient.to_context_summary()
 
-    user_prompt = f"""Voici le profil d'un patient pour lequel je dois choisir un modèle conceptuel en ergothérapie :
+    # Contexte RAG si disponible
+    rag_section = ""
+    if vectorstore:
+        try:
+            from rag.retriever import search, format_context
+            docs = search(
+                "modele conceptuel ergotherapie evaluation besoins",
+                k=3,
+                vectorstore=vectorstore
+            )
+            if docs:
+                rag_section = "Contexte documentaire :\n" + format_context(docs)
+        except Exception:
+            pass
 
-{profil}
+    lines = [
+        "Voici le profil d'un patient pour lequel je dois choisir un modèle conceptuel :",
+        "",
+        profil,
+    ]
+    if rag_section:
+        lines.append("")
+        lines.append(rag_section)
 
-{f"Contexte documentaire :{chr(10)}{rag_context}" if rag_context else ""}
+    lines += [
+        "",
+        "Analyse ce profil et réponds en JSON strict avec ce format :",
+        '{"modele": "NOM", "justification": "...", "axes_evaluation": ["axe1", "axe2", "axe3", "axe4"]}',
+    ]
 
-Analyse ce profil et :
-1. Choisis le modèle conceptuel le plus adapté (MCREO, PEO, MOHO, ou autre)
-2. Justifie ton choix en 3-4 phrases cliniques
-3. Identifie les 4-5 axes d'évaluation prioritaires pour ce patient
-
-Réponds en JSON strict avec ce format :
-{{
-  "modele": "NOM_DU_MODELE",
-  "justification": "...",
-  "axes_evaluation": ["axe1", "axe2", "axe3", "axe4"]
-}}"""
+    user_prompt = "\n".join(lines)
 
     response = client.messages.create(
         model="claude-3-5-sonnet-20241022",
@@ -64,7 +63,6 @@ Réponds en JSON strict avec ce format :
         messages=[{"role": "user", "content": user_prompt}]
     )
 
-    import json, re
     text = response.content[0].text
     match = re.search(r'\{.*\}', text, re.DOTALL)
     if match:
@@ -76,5 +74,10 @@ Réponds en JSON strict avec ce format :
     return {
         "modele": "MCREO",
         "justification": text,
-        "axes_evaluation": ["Capacités fonctionnelles", "Environnement", "Occupations prioritaires", "Participation sociale"]
+        "axes_evaluation": [
+            "Capacités fonctionnelles",
+            "Environnement",
+            "Occupations prioritaires",
+            "Participation sociale"
+        ]
     }
