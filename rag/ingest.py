@@ -1,5 +1,6 @@
 """
 UtopIA — Ingestion RAG
+Embeddings locaux via sentence-transformers (pas de clé API supplémentaire).
 """
 
 from pathlib import Path
@@ -9,7 +10,7 @@ import fitz
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
-from langchain_voyageai import VoyageAIEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DOCS_DIR = BASE_DIR / "docs"
@@ -47,10 +48,15 @@ def extract_pdf(path: Path) -> List[Document]:
 
 
 def build_vectorstore(api_key: str) -> Chroma:
+    """
+    Construit le vectorstore en mémoire.
+    api_key est gardé en paramètre pour la compatibilité mais non utilisé ici.
+    """
     pdf_files = sorted(DOCS_DIR.rglob("*.pdf"))
     if not pdf_files:
         raise FileNotFoundError(f"Aucun PDF trouvé dans {DOCS_DIR}")
 
+    # Extraction
     all_raw = []
     for pdf_path in pdf_files:
         all_raw.extend(extract_pdf(pdf_path))
@@ -58,6 +64,7 @@ def build_vectorstore(api_key: str) -> Chroma:
     if not all_raw:
         raise ValueError("Aucun texte extrait des PDFs.")
 
+    # Chunking
     all_chunks = []
     for doc in all_raw:
         category = doc.metadata.get("category", "default")
@@ -72,15 +79,16 @@ def build_vectorstore(api_key: str) -> Chroma:
             c.metadata.update(doc.metadata)
         all_chunks.extend(chunks)
 
-    embeddings = VoyageAIEmbeddings(
-        voyage_api_key=api_key,
-        model="voyage-3",
+    # Embeddings multilingues locaux — excellent pour le français, aucune clé requise
+    embeddings = HuggingFaceEmbeddings(
+        model_name="paraphrase-multilingual-MiniLM-L12-v2",
+        model_kwargs={"device": "cpu"},
+        encode_kwargs={"normalize_embeddings": True},
     )
+
     vectorstore = Chroma.from_documents(
         documents=all_chunks,
         embedding=embeddings,
         collection_name="utopia",
     )
     return vectorstore
-
-
