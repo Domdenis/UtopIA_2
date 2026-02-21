@@ -96,7 +96,7 @@ Pour CHAQUE proposition, fournis un objet JSON avec exactement ces champs :
 Réponds UNIQUEMENT avec un tableau JSON valide : [{{...}}, {{...}}, ...]"""
 
     response = client.messages.create(
-        model="claude-sonnet-4-6",
+        model="claude-3-5-sonnet-20241022",
         max_tokens=2000,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": user_prompt}]
@@ -142,7 +142,7 @@ def determine_vph_category(patient: PatientState, api_key: str, vectorstore=None
     profil = patient.to_context_summary()
 
     response = client.messages.create(
-        model="claude-sonnet-4-6",
+        model="claude-3-5-sonnet-20241022",
         max_tokens=200,
         system=SYSTEM_PROMPT,
         messages=[{
