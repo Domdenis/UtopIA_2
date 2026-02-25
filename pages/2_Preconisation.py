@@ -91,13 +91,16 @@ with col1:
 with col2:
     if st.button("🤖 Analyser le profil", use_container_width=True):
         with st.spinner("Analyse du profil patient..."):
-            result = select_model_conceptuel(patient, api_key, vectorstore)
-            patient.modele_conceptuel_choisi = result.get("modele", "MCREO")
-            patient.justification_modele = result.get("justification", "")
-            axes = result.get("axes_evaluation", [])
-            st.session_state["axes_evaluation"] = axes
-            st.session_state.patient = patient
-            st.rerun()
+            try:
+                result = select_model_conceptuel(patient, api_key, vectorstore)
+                patient.modele_conceptuel_choisi = result.get("modele", "MCREO")
+                patient.justification_modele = result.get("justification", "")
+                axes = result.get("axes_evaluation", [])
+                st.session_state["axes_evaluation"] = axes
+                st.session_state.patient = patient
+                st.rerun()
+            except Exception as e:
+                st.error("Erreur : " + type(e).__name__ + " — " + str(e))
 
 # Override manuel
 if patient.modele_conceptuel_choisi:
