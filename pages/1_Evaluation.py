@@ -200,11 +200,14 @@ st.session_state.patient = patient
 st.divider()
 col1, col2, col3 = st.columns([2, 1, 2])
 with col2:
-    if st.button("🔍 Analyser le profil →", use_container_width=True):
+    if st.button("💬 Continuer vers l'entretien →", use_container_width=True):
         if not patient.diagnostic:
             st.error("⚠️ Veuillez renseigner au minimum le diagnostic du patient.")
         else:
             patient.statut = "preconisation"
             st.session_state.patient = patient
-            st.success("✅ Profil enregistré. Rendez-vous sur la page Préconisation.")
+            st.session_state.chat_history = []
+            st.session_state.chat_termine = False
+            st.session_state.chat_synthese = ""
+            st.success("✅ Profil enregistré. Rendez-vous sur la page **Entretien** dans le menu.")
             st.balloons()
